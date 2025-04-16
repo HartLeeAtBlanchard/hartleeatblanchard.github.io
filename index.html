@@ -114,7 +114,26 @@
     #language-select option:disabled {
       color: #aaa;
     }
-  </style>
+  
+    #toast {
+      position: fixed;
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      color: #0076a8;
+      padding: 10px 20px;
+      border-style: solid;
+      border-color: #0076a8;
+      border-radius: 8px;
+      z-index: 1000;
+      transition: top 0.4s ease;
+    }
+    #toast.show {
+      top: 20px;
+    }
+
+</style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body>
@@ -162,6 +181,7 @@
   <div id="result-container">
     <div>
       <img id="qrcode" style="display:none;" alt="Your QR Code will appear here" title="Click to download QR code" />
+      <p>Click the QR code above to download</p>
     </div>
     <div id="qr-details" style="display:none;">
       <p>Qualtrics URL: <a id="qualtrics-url" href="#" style="cursor:pointer;" onclick="copyUrl(event)"></a></p>
@@ -324,8 +344,7 @@
     window.addEventListener("DOMContentLoaded", init);
   </script>
 
-  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);
-      background:#0076a8;color:white;padding:10px 20px;border-radius:8px;display:none;z-index:1000;">
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);background: white; color: rgb(0, 118, 168); padding: 10px 20px; border-style: solid; border-color: rgb(0, 118, 168); padding:10px 20px;border-radius:8px;display:none;z-index:1000;">
     URL copied
   </div>
   </main>
@@ -372,8 +391,8 @@
       const url = document.getElementById("qualtrics-url").textContent;
       navigator.clipboard.writeText(url).then(() => {
         const toast = document.getElementById("toast");
-        toast.style.display = "block";
-        setTimeout(() => { toast.style.display = "none"; }, 2000);
+        toast.classList.add("show");
+        setTimeout(() => { toast.classList.remove("show"); }, 2000);
       });
     }
 
