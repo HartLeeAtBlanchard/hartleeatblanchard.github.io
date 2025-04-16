@@ -88,7 +88,7 @@
     .section {
       display: inline-block;
       vertical-align: top;
-      margin-right: 40px;
+      margin-right: 20px;
     }
     #result-container {
       margin-top: 30px;
@@ -116,12 +116,14 @@
 </head>
 <body>
   <header>
-    <h1>QR Code Generator for Standard Evaluation</h1>
-    <label style="position:absolute; top:20px; right:30px;">
+    
+    <label style="position:absolute; top:30px; right:30px;">
       <input type="checkbox" id="dark-toggle"> Dark Mode
     </label>
   </header>
   <main>
+  <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: flex-start; margin-bottom: 30px;">
+
 
   <h1>QR Code Generator for Standard Evaluation</h1>
 
@@ -151,7 +153,7 @@
     </div>
   </div>
 
-  <br style="clear: both;">
+  </div>
   <button id="generate-btn">Generate QR Code</button>
 
   <div id="result-container">
@@ -305,7 +307,7 @@
       const baseQualtrics = "https://kenblanchard.az1.qualtrics.com/jfe/form/SV_8wFJLosFQvjb9UG?&";
       const fullURL = baseQualtrics + topicParam + `&Mode=${modalityCode}` + (langCode ? `&Q_Language=${langCode}` : "") + "&A=1";
 
-      document.getElementById("qrcode").src = "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + encodeURIComponent(fullURL);
+      const qrImg = document.getElementById("qrcode"); qrImg.style.display = "block"; qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + encodeURIComponent(fullURL);
       const link = document.getElementById("qualtrics-url");
       link.href = fullURL;
       link.textContent = fullURL;
