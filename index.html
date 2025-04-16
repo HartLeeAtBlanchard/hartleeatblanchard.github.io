@@ -132,6 +132,10 @@
     .toast.show {
       top: 20px;
     }
+    .selected-label {
+      font-weight: bold;
+      color: #005f85;
+    }
     
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -183,10 +187,10 @@
       <img id="qrcode" style="display:none;" alt="Your QR Code will appear here" title="Click to download QR code" />
     </div>
     <div id="qr-details" style="display:none;">
-      <p>Qualtrics URL: <a id="qualtrics-url" href="#" style="cursor:pointer;" onclick="copyUrl(event)"></a></p>
-      <p>Selected Topic(s): <span id="selected-topics"></span></p>
-      <p>Selected Mode: <span id="selected-mode"></span></p>
-      <p>Selected Language: <span id="selected-language"></span></p>
+      <p><strong>Qualtrics URL:</strong> <a id="qualtrics-url" href="#" style="cursor:pointer;" onclick="copyUrl(event)"></a></p>
+      <p><strong>Topic(s):</strong> <span id="selected-topics"></span></p>
+      <p><strong>Mode:</strong> <span id="selected-mode"></span></p>
+      <p><strong>Language:</strong> <span id="selected-language"></span></p>
     </div>
   </div>
 
@@ -257,7 +261,15 @@
         checkbox.value = item.Code.trim();
         checkbox.setAttribute("data-topic-name", item.Topic.trim());
         checkbox.id = "topic-" + i;
-        checkbox.addEventListener("change", updateLanguageOptions);
+        checkbox.addEventListener("change", function () {
+          updateLanguageOptions();
+          const label = this.nextElementSibling;
+          if (this.checked) {
+            label.classList.add("selected-label");
+          } else {
+            label.classList.remove("selected-label");
+          }
+        });
 
         const label = document.createElement("label");
         label.htmlFor = checkbox.id;
