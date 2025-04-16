@@ -4,6 +4,80 @@
   <meta charset="UTF-8">
   <title>QR Code Generator for Standard Evaluation</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+    header {
+      background-color: #0076a8;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    main {
+      padding: 30px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    button {
+      background-color: #0076a8;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-top: 20px;
+    }
+    button:hover {
+      background-color: #005f85;
+    }
+    select, input[type="checkbox"], input[type="radio"] {
+      cursor: pointer;
+    }
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      width: 100%;
+      max-width: 300px;
+    }
+    #result-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+    }
+    #qrcode {
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 10px;
+      background: white;
+    }
+    #qr-details {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      flex-grow: 1;
+    }
+    a {
+      word-break: break-all;
+      color: #0076a8;
+    }
+    @media (max-width: 768px) {
+      #result-container {
+        flex-direction: column;
+      }
+    }
+
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
