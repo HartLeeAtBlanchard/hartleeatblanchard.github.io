@@ -429,6 +429,27 @@
       }
     `;
     document.head.appendChild(style);
+    
+    document.querySelectorAll('input[name="modality"]').forEach(radio => {
+      radio.addEventListener("change", () => {
+        document.querySelectorAll('input[name="modality"]').forEach(el => {
+          const label = el.nextElementSibling;
+          if (label) label.classList.remove("selected-label");
+        });
+        const selectedLabel = radio.nextElementSibling;
+        if (selectedLabel) selectedLabel.classList.add("selected-label");
+      });
+    });
+
+    // Initialize default selected modality label on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      const checked = document.querySelector('input[name="modality"]:checked');
+      if (checked) {
+        const label = checked.nextElementSibling;
+        if (label) label.classList.add("selected-label");
+      }
+    });
+
   </script>
 </body>
 </html>
