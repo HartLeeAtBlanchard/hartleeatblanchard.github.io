@@ -53,7 +53,7 @@
     #result-container {
       display: flex;
       flex-wrap: wrap;
-      gap: 40px;
+      gap: 20px;
     }
     #qrcode {
       border: 1px solid #ccc;
@@ -97,7 +97,7 @@
       margin-top: 30px;
       display: flex;
       align-items: flex-start;
-      gap: 40px;
+      gap: 20px;
     }
     #topics-container label,
     #modality-container label {
@@ -125,7 +125,7 @@
     </label>
   </header>
   <main>
-  <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-start; margin-bottom: 10px;">
+  <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: flex-start; margin-bottom: 30px;">
 
 
   <h1 style="width:100%;">QR Code Generator for Standard Evaluation</h1>
@@ -339,11 +339,33 @@
 
     document.getElementById("qrcode").addEventListener("click", function () {
       if (!this.src) return;
-      const link = document.createElement("a");
-      link.href = this.src;
-      link.download = "qr-code.png";
-      link.click();
+      downloadResource(this.src, "qr-code.png");
     });
+
+    function forceDownload(blob, filename) {
+      var a = document.createElement('a');
+      a.download = filename;
+      a.href = blob;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function downloadResource(url, filename) {
+      if (!filename) filename = url.split('\\').pop().split('/').pop();
+      fetch(url, {
+          headers: new Headers({
+            'Origin': location.origin
+          }),
+          mode: 'cors'
+        })
+        .then(response => response.blob())
+        .then(blob => {
+          let blobUrl = window.URL.createObjectURL(blob);
+          forceDownload(blobUrl, filename);
+        })
+        .catch(e => console.error(e));
+    }
 
     function copyUrl(event) {
       event.preventDefault();
