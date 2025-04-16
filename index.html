@@ -33,7 +33,7 @@
       border-radius: 6px;
       cursor: pointer;
       transition: background 0.3s ease;
-      margin-top: 10px;
+      margin-top: 20px;
     }
     button:hover {
       background-color: #005f85;
@@ -43,17 +43,17 @@
     }
     .section {
       background: white;
-      padding: 10px;
+      padding: 20px;
       border-radius: 12px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
       margin-bottom: 20px;
       width: 100%;
-      max-width: 280px;
+      max-width: 300px;
     }
     #result-container {
       display: flex;
       flex-wrap: wrap;
-      gap: 20px;
+      gap: 40px;
     }
     #qrcode {
       border: 1px solid #ccc;
@@ -97,7 +97,7 @@
       margin-top: 30px;
       display: flex;
       align-items: flex-start;
-      gap: 20px;
+      gap: 40px;
     }
     #topics-container label,
     #modality-container label {
@@ -115,24 +115,11 @@
       color: #aaa;
     }
   
-    .toast {
-      position: fixed;
-      top: -60px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: white;
-      color: #0076a8;
-      padding: 10px 20px;
-      border-style: solid;
-      border-color: #0076a8;
-      border-radius: 8px;
-      z-index: 1000;
-      transition: top 0.4s ease;
+    .selected-label {
+      font-weight: bold;
+      color: #005f85;
     }
-    .toast.show {
-      top: 20px;
-    }
-    
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
@@ -181,12 +168,13 @@
   <div id="result-container">
     <div>
       <img id="qrcode" style="display:none;" alt="Your QR Code will appear here" title="Click to download QR code" />
+<p id="qr-caption" style="display:none; font-style: italic; margin-top: 8px;">Click the QR code above to download</p>
     </div>
-    <div id="qr-details" style="display:none;">
-      <p>Qualtrics URL: <a id="qualtrics-url" href="#" style="cursor:pointer;" onclick="copyUrl(event)"></a></p>
-      <p>Selected Topic(s): <span id="selected-topics"></span></p>
-      <p>Selected Mode: <span id="selected-mode"></span></p>
-      <p>Selected Language: <span id="selected-language"></span></p>
+    <div id="qr-details">
+      <p><strong>Qualtrics URL:</strong> <a id="qualtrics-url" href="#" style="cursor:pointer;" onclick="copyUrl(event)"></a></p>
+      <p><strong>Selected Topic(s):</strong> <span id="selected-topics"></span></p>
+      <p><strong>Selected Mode:</strong> <span id="selected-mode"></span></p>
+      <p><strong>Selected Language:</strong> <span id="selected-language"></span></p>
     </div>
   </div>
 
@@ -257,7 +245,15 @@
         checkbox.value = item.Code.trim();
         checkbox.setAttribute("data-topic-name", item.Topic.trim());
         checkbox.id = "topic-" + i;
-        checkbox.addEventListener("change", updateLanguageOptions);
+        checkbox.addEventListener("change", function () {
+          updateLanguageOptions();
+          const label = this.nextElementSibling;
+          if (this.checked) {
+            label.classList.add("selected-label");
+          } else {
+            label.classList.remove("selected-label");
+          }
+        });
 
         const label = document.createElement("label");
         label.htmlFor = checkbox.id;
@@ -329,7 +325,7 @@
       const baseQualtrics = "https://kenblanchard.az1.qualtrics.com/jfe/form/SV_8wFJLosFQvjb9UG?&";
       const fullURL = baseQualtrics + topicParam + `&Mode=${modalityCode}` + (langCode ? `&Q_Language=${langCode}` : "") + "&A=1";
 
-      const qrImg = document.getElementById("qrcode"); qrImg.style.display = "block"; document.getElementById("qr-details").style.display = "block"; qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + encodeURIComponent(fullURL);
+      const qrImg = document.getElementById("qrcode"); qrImg.style.display = "block"; qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + encodeURIComponent(fullURL);
       const link = document.getElementById("qualtrics-url");
       link.href = fullURL;
       link.textContent = fullURL;
@@ -343,7 +339,8 @@
     window.addEventListener("DOMContentLoaded", init);
   </script>
 
-  <div id="toast" class="toast">
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);
+      background:#0076a8;color:white;padding:10px 20px;border-radius:8px;display:none;z-index:1000;">
     URL copied
   </div>
   </main>
@@ -357,41 +354,19 @@
 
     document.getElementById("qrcode").addEventListener("click", function () {
       if (!this.src) return;
-      downloadResource(this.src, "qr-code.png");
+      const link = document.createElement("a");
+      link.href = this.src;
+      link.download = "qr-code.png";
+      link.click();
     });
-
-    function forceDownload(blob, filename) {
-      var a = document.createElement('a');
-      a.download = filename;
-      a.href = blob;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }
-
-    function downloadResource(url, filename) {
-      if (!filename) filename = url.split('\\').pop().split('/').pop();
-      fetch(url, {
-          headers: new Headers({
-            'Origin': location.origin
-          }),
-          mode: 'cors'
-        })
-        .then(response => response.blob())
-        .then(blob => {
-          let blobUrl = window.URL.createObjectURL(blob);
-          forceDownload(blobUrl, filename);
-        })
-        .catch(e => console.error(e));
-    }
 
     function copyUrl(event) {
       event.preventDefault();
       const url = document.getElementById("qualtrics-url").textContent;
       navigator.clipboard.writeText(url).then(() => {
         const toast = document.getElementById("toast");
-        toast.classList.add("show");
-        setTimeout(() => { toast.classList.remove("show"); }, 2000);
+        toast.style.display = "block";
+        setTimeout(() => { toast.style.display = "none"; }, 2000);
       });
     }
 
@@ -417,7 +392,28 @@
       }
     `;
     document.head.appendChild(style);
-  </script>
+  
+    document.querySelectorAll('input[name="modality"]').forEach(radio => {
+      radio.addEventListener("change", () => {
+        document.querySelectorAll('input[name="modality"]').forEach(el => {
+          const label = el.nextElementSibling;
+          if (label) label.classList.remove("selected-label");
+        });
+        const selectedLabel = radio.nextElementSibling;
+        if (selectedLabel) selectedLabel.classList.add("selected-label");
+      });
+    });
+
+    // Initialize default selected modality label on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      const checked = document.querySelector('input[name="modality"]:checked');
+      if (checked) {
+        const label = checked.nextElementSibling;
+        if (label) label.classList.add("selected-label");
+      }
+    });
+
+</script>
 </body>
 </html>
 
