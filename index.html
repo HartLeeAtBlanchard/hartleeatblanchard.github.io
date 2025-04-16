@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QR Code Generator for Standard Evaluation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .section {
+      display: inline-block;
+      vertical-align: top;
+      margin-right: 40px;
+    }
+    #result-container {
+      margin-top: 30px;
+      display: flex;
+      align-items: flex-start;
+      gap: 40px;
+    }
+    #topics-container label,
+    #modality-container label {
+      margin-right: 10px;
+    }
+    #language-select {
+      width: 200px;
+      padding: 4px;
+    }
+    #qr-details {
+      max-width: 400px;
+      word-wrap: break-word;
+    }
+    #language-select option:disabled {
+      color: #aaa;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+<body>
+  <h1>QR Code Generator for Standard Evaluation</h1>
+
+  <div class="section" id="topics-section">
+    <h3>Select topic(s):</h3>
+    <div id="topics-container"></div>
+  </div>
+
+  <div class="section" id="modality-section">
+    <h3>Select Modality:</h3>
+    <div id="modality-container">
+      <input type="radio" name="modality" value="F2F" data-label="Face-to-Face" id="mod-f2f" checked>
+      <label for="mod-f2f">Face-to-Face</label><br>
+      <input type="radio" name="modality" value="VIRT" data-label="Virtual" id="mod-virt">
+      <label for="mod-virt">Virtual</label><br>
+      <input type="radio" name="modality" value="DEB" data-label="Debrief" id="mod-deb">
+      <label for="mod-deb">Debrief</label><br>
+      <input type="radio" name="modality" value="OO" data-label="Online Overview" id="mod-oo">
+      <label for="mod-oo">Online Overview</label>
+    </div>
+  </div>
+
+  <div class="section" id="language-section">
+    <h3>Select Starting Language:</h3>
+    <div>
+      <select id="language-select"></select>
+    </div>
+  </div>
+
+  <br style="clear: both;">
+  <button id="generate-btn">Generate QR Code</button>
+
+  <div id="result-container">
+    <div>
+      <img id="qrcode" src="" alt="Your QR Code will appear here" />
+    </div>
+    <div id="qr-details">
+      <p>Qualtrics URL: <a id="qualtrics-url" href="#" target="_blank"></a></p>
+      <p>Selected Topic(s): <span id="selected-topics"></span></p>
+      <p>Selected Mode: <span id="selected-mode"></span></p>
+      <p>Selected Language: <span id="selected-language"></span></p>
+    </div>
+  </div>
+
+  <script>
+    const urls = {
+      TopicCodes: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSkWp9EDTz2veospZyX0_o0GOHP0tzGy3CiRDbQdqPubyvEGhV8igMPCjAPMxjPS5IoDKVEvSIXyoJa/pub?gid=0&single=true&output=csv',
+      LanguageCodes: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSkWp9EDTz2veospZyX0_o0GOHP0tzGy3CiRDbQdqPubyvEGhV8igMPCjAPMxjPS5IoDKVEvSIXyoJa/pub?gid=1648406401&single=true&output=csv',
+      Translations: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSkWp9EDTz2veospZyX0_o0GOHP0tzGy3CiRDbQdqPubyvEGhV8igMPCjAPMxjPS5IoDKVEvSIXyoJa/pub?gid=1276136168&single=true&output=csv'
+    };
+
+    let topicData = [], languageData = [], translationsData = [];
+    let translationsMapping = {}, languageCodeMapping = {}, topicsList = [], availableLanguages = [];
+
+    function fetchSheet(url) {
+      return new Promise((resolve, reject) => {
+        Papa.parse(url, {
+          download: true,
+          header: true,
+          complete: results => resolve(results.data),
+          error: reject
+        });
+      });
+    }
+
+    function init() {
+      Promise.all([
+        fetchSheet(urls.TopicCodes),
+        fetchSheet(urls.LanguageCodes),
+        fetchSheet(urls.Translations)
+      ])
+      .then(([topics, languages, translations]) => {
+        topicData = topics.filter(row => row.Topic && row.Code);
+        languageData = languages.filter(row => row.Language && row.Code);
+        translationsData = translations.filter(row => row.Topic);
+
+        topicsList = topicData;
+        languageData.forEach(row => {
+          languageCodeMapping[row.Language.trim()] = row.Code.trim();
+        });
+
+        const headers = Object.keys(translationsData[0]);
+        availableLanguages = headers.filter(h => h !== "Topic");
+
+        translationsData.forEach(row => {
+          const topic = row.Topic.trim();
+          translationsMapping[topic] = {};
+          availableLanguages.forEach(lang => {
+            translationsMapping[topic][lang] = (row[lang] && row[lang].trim().toLowerCase() === "x");
+          });
+        });
+
+        populateTopics();
+        populateLanguages();
+      })
+      .catch(err => {
+        console.error("Error loading data:", err);
+        alert("Failed to load Google Sheet data. Please check your connection or try again.");
+      });
+    }
+
+    function populateTopics() {
+      const container = document.getElementById("topics-container");
+      container.innerHTML = "";
+      topicsList.forEach((item, i) => {
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.name = "topic";
+        checkbox.value = item.Code.trim();
+        checkbox.setAttribute("data-topic-name", item.Topic.trim());
+        checkbox.id = "topic-" + i;
+        checkbox.addEventListener("change", updateLanguageOptions);
+
+        const label = document.createElement("label");
+        label.htmlFor = checkbox.id;
+        label.textContent = item.Topic.trim();
+
+        container.appendChild(checkbox);
+        container.appendChild(label);
+        container.appendChild(document.createElement("br"));
+      });
+    }
+
+    function populateLanguages() {
+      const select = document.getElementById("language-select");
+      select.innerHTML = "";
+      availableLanguages.forEach(lang => {
+        const opt = document.createElement("option");
+        opt.value = lang;
+        opt.textContent = lang;
+        if (lang === "English (Default)") opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function updateLanguageOptions() {
+      const selectedTopics = Array.from(document.querySelectorAll('input[name="topic"]:checked'))
+        .map(cb => cb.getAttribute("data-topic-name"));
+
+      const select = document.getElementById("language-select");
+      Array.from(select.options).forEach(opt => {
+        const lang = opt.value;
+        let valid = true;
+        for (let topic of selectedTopics) {
+          if (!translationsMapping[topic] || !translationsMapping[topic][lang]) {
+            valid = false;
+            break;
+          }
+        }
+        opt.disabled = !valid;
+        opt.style.color = valid ? "" : "#aaa";
+      });
+
+      if (select.selectedOptions[0]?.disabled) {
+        select.value = "English (Default)";
+      }
+    }
+
+    function generateQRCode() {
+      const selectedCheckboxes = Array.from(document.querySelectorAll('input[name="topic"]:checked'));
+      if (selectedCheckboxes.length === 0) {
+        alert("Please select at least one topic.");
+        return;
+      }
+
+      const topicCodes = selectedCheckboxes.map(cb => cb.value);
+      const topicNames = selectedCheckboxes.map(cb => cb.getAttribute("data-topic-name"));
+
+      let topicParam = topicCodes.length === 1
+        ? `Topic=${topicCodes[0]}`
+        : `Multi=${topicCodes.join(",")}`;
+
+      const modalityEl = document.querySelector('input[name="modality"]:checked');
+      const modalityCode = modalityEl.value;
+      const modalityLabel = modalityEl.getAttribute("data-label");
+
+      const langSelect = document.getElementById("language-select");
+      const langValue = langSelect.value;
+      const langCode = langValue !== "English (Default)" ? languageCodeMapping[langValue] : null;
+
+      const baseQualtrics = "https://kenblanchard.az1.qualtrics.com/jfe/form/SV_8wFJLosFQvjb9UG?&";
+      const fullURL = baseQualtrics + topicParam + `&Mode=${modalityCode}` + (langCode ? `&Q_Language=${langCode}` : "") + "&A=1";
+
+      document.getElementById("qrcode").src = "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + encodeURIComponent(fullURL);
+      const link = document.getElementById("qualtrics-url");
+      link.href = fullURL;
+      link.textContent = fullURL;
+
+      document.getElementById("selected-topics").textContent = topicNames.join(", ");
+      document.getElementById("selected-mode").textContent = modalityLabel;
+      document.getElementById("selected-language").textContent = langValue;
+    }
+
+    document.getElementById("generate-btn").addEventListener("click", generateQRCode);
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
